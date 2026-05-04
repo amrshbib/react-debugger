@@ -4,9 +4,11 @@
  * Only active in __DEV__ mode — zero impact in production.
  */
 
-export const IS_DEV = (typeof __DEV__ !== "undefined" && __DEV__) || (typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production");
+export const IS_DEV =true
 
 export const DEBUGGER_PORT = 8347;
+
+const _global = typeof globalThis !== "undefined" ? globalThis : (typeof window !== "undefined" ? window : (typeof global !== "undefined" ? global : (typeof self !== "undefined" ? self : {})));
 
 export let config = {
   host: "localhost",
@@ -41,10 +43,10 @@ let originalConsole = {};
 let userDeviceInfo = {};
 
 // Guard against multiple initializations
-if (global.__RN_DEBUGGER_INSTALLED__) {
+if (_global.__RN_DEBUGGER_INSTALLED__) {
   // Already installed, but we might want to export the functions again
 } else {
-  global.__RN_DEBUGGER_INSTALLED__ = true;
+  _global.__RN_DEBUGGER_INSTALLED__ = true;
 }
 
 function send(domain, event, payload) {
@@ -182,9 +184,9 @@ function interceptNetwork() {
   networkInstalled = true;
 
   // ── Intercept fetch ──
-  originalFetch = global.fetch;
+  originalFetch = _global.fetch;
 
-  global.fetch = async function (input, init) {
+  _global.fetch = async function (input, init) {
     const requestId = genId("net");
     const startTime = Date.now();
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
@@ -192,7 +194,7 @@ function interceptNetwork() {
 
     // Don't intercept our own debugger connections
     if (url.includes(`${config.host}:${DEBUGGER_PORT}`)) {
-      return originalFetch.call(global, input, init);
+      return originalFetch.call(_global, input, init);
     }
 
     const headers = {};
@@ -217,7 +219,7 @@ function interceptNetwork() {
     });
 
     try {
-      const response = await originalFetch.call(global, input, init);
+      const response = await originalFetch.call(_global, input, init);
       const duration = Date.now() - startTime;
 
       // Clone to read body without consuming
@@ -408,7 +410,7 @@ function interceptWebSocket() {
   if (websocketInstalled) return;
   websocketInstalled = true;
 
-  originalWebSocket = global.WebSocket;
+  originalWebSocket = _global.WebSocket;
 
   const PatchedWebSocket = function(url, protocols) {
     const socketId = genId("ws");
@@ -474,7 +476,7 @@ function interceptWebSocket() {
   PatchedWebSocket.prototype = originalWebSocket.prototype;
   Object.assign(PatchedWebSocket, originalWebSocket);
 
-  global.WebSocket = PatchedWebSocket;
+  _global.WebSocket = PatchedWebSocket;
 }
 
 function summarizeSocketData(data) {
@@ -578,6 +580,8 @@ let lastFrameTime = 0;
 let rafId = null;
 
 function startPerformanceMonitor() {
+  if (config.getDeviceInfo().platform === 'web') return; // Don't track FPS/Perf on Web for now
+
   lastFrameTime = Date.now();
 
   const tick = () => {
@@ -590,7 +594,7 @@ function startPerformanceMonitor() {
     const fps = Math.round((frameCount / 1000) * 1000);
     frameCount = 0;
 
-    const memInfo = global.performance?.memory;
+    const memInfo = _global.performance?.memory;
 
     send("performance", "performance:metrics", {
       metrics: {
@@ -1013,9 +1017,9 @@ function detectAndTrackContexts(fiber, parentName = "App") {
 
 // Patch the EXISTING React DevTools hook (React Native already sets one up)
 function installInspectorHook() {
-  const hook = global.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  const hook = _global.__REACT_DEVTOOLS_GLOBAL_HOOK__;
   if (!hook) {
-    global.__REACT_DEVTOOLS_GLOBAL_HOOK__ = {
+    _global.__REACT_DEVTOOLS_GLOBAL_HOOK__ = {
       checkDCE: () => {},
       supportsFiber: true,
       renderers: new Map(),
@@ -1027,7 +1031,7 @@ function installInspectorHook() {
       onCommitFiberUnmount: () => {},
       inject: (renderer) => {
         const id = Math.random();
-        global.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers.set(id, renderer);
+        _global.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers.set(id, renderer);
         return id;
       },
     };
@@ -1222,7 +1226,7 @@ export function disconnectDebugger() {
 
   // Restore fetch
   if (originalFetch) {
-    global.fetch = originalFetch;
+    _global.fetch = originalFetch;
   }
 
   // Restore XHR
