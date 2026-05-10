@@ -1,6 +1,6 @@
 {
   "name": "@amrshbib/react-debugger",
-  "version": "0.0.2",
+  "version": "1.0.2",
   "description": "React and React Native standalone debugger SDK",
   "main": "index.js",
   "browser": "index.web.js",
@@ -15,5 +15,10 @@
     "@react-native-async-storage/async-storage": {
       "optional": true
     }
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/amrshbib/react-debugger"
+  },
+  "homepage": "https://github.com/amrshbib/react-debugger#readme"
 }

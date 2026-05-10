@@ -19,7 +19,7 @@ A lightweight, zero-config SDK that connects your React or React Native applicat
 Stop relying on messy console logs and disjointed tools. Get **real-time network inspection, console logs, state management debugging, performance monitoring, UI inspection**, and more—all from the comfort of your editor!
 
 <div align="center">
-  <img src="./demo.gif" alt="React Debugger Demo" width="800" />
+  <img src="https://raw.githubusercontent.com/amrshbib/react-debugger/main/demo.gif" alt="React Debugger Demo" width="800" />
 </div>
 
 ---
